@@ -64,6 +64,31 @@ ssize_t uk_swrand_fill_buffer(void *buf, size_t buflen)
 	return buflen;
 }
 
+ssize_t uk_random_fill_buffer(void *buf, __sz buflen) {
+	__sz step, chunk_size, i;
+	__u64 rd;
+	int ret;
+
+	step = sizeof(__u64);
+	chunk_size = buflen % step;
+
+	for (i = 0; i < buflen - chunk_size; i += step) {
+		ret = ukarch_random_seed_u64((__u64 *)((char *)buf + i));
+		if (unlikely(ret))
+			return ret;
+	}
+
+	/* fill the remaining bytes of the buffer */
+	if (chunk_size > 0) {
+		ret = ukarch_random_seed_u64(&rd);
+		if (unlikely(ret))
+			return ret;
+		memcpy((char *)buf + i, &rd, chunk_size);
+	}
+
+	return buflen;
+}
+
 static int _uk_swrand_init(struct uk_init_ctx *ictx __unused)
 {
 	unsigned int seedc = CHACHA_SEED_LENGTH;

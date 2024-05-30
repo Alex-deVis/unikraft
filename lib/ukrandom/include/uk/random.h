@@ -67,6 +67,7 @@ static inline __u32 uk_swrand_randr(void)
 }
 
 ssize_t uk_swrand_fill_buffer(void *buf, size_t buflen);
+ssize_t uk_random_fill_buffer(void *buf, __sz buflen);
 
 #ifdef __cplusplus
 }

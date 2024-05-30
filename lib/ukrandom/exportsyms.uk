@@ -5,3 +5,4 @@ uk_swrand_def
 uk_swrand_init_r
 uk_swrand_randr_r
 uk_swrand_fill_buffer
+uk_random_fill_buffer
