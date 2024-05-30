@@ -32,26 +32,17 @@
 #include <uk/config.h>
 #include <uk/print.h>
 #include <uk/init.h>
+#include <uk/arch/random.h>
 
-__u32 uk_swrandr_gen_seed32(void)
-{
-	__u32 val;
-
-#ifdef CONFIG_LIBUKRANDOM_INITIALSEED_TIME
-	val = (__u32)ukplat_wall_clock();
-#endif
-
-#ifdef CONFIG_LIBUKRANDOM_INITIALSEED_RDRAND
-	asm volatile ("rdrand %%eax;"
-		: "=a" (val));
-#endif
-
-#ifdef CONFIG_LIBUKRANDOM_INITIALSEED_USECONSTANT
-	val = CONFIG_LIBUKRANDOM_INITIALSEED_CONSTANT;
-#endif
-
-	return val;
-}
+/*
+ * seedc is the seed length in 32-bit integers.
+ * ChaCha20 requires eight 32-bit integers for the key and two 32-bit
+ * integers for the nonce, hence seedc is always 10.
+ * RFC7539 specifies three 32-bit integers for the nonce, but the reference
+ * implementation uses only two:
+ * http://cr.yp.to/streamciphers/timings/estreambench/submissions/salsa20/chacha8/ref/chacha.c
+ */
+#define CHACHA_SEED_LENGTH 10
 
 ssize_t uk_swrand_fill_buffer(void *buf, size_t buflen)
 {
@@ -75,18 +66,30 @@ ssize_t uk_swrand_fill_buffer(void *buf, size_t buflen)
 
 static int _uk_swrand_init(struct uk_init_ctx *ictx __unused)
 {
-	unsigned int seedc = 10;
-	__u32 seedv[10];
+	unsigned int seedc = CHACHA_SEED_LENGTH;
+	__u32 seedv[CHACHA_SEED_LENGTH];
 	unsigned int i;
+	int ret;
 
 	uk_pr_info("Initialize random number generator...\n");
 
-	for (i = 0; i < seedc; i++)
-		seedv[i] = uk_swrandr_gen_seed32();
+	for (i = 0; i < seedc; i++) {
+		ret = ukarch_random_seed_u32(&seedv[i]);
+		if (unlikely(ret)) {
+			uk_pr_err("Could not generate random seed\n");
+			return ret;
+		}
+	}
 
 	uk_swrand_init_r(&uk_swrand_def, seedc, seedv);
 
 	return seedc;
 }
 
+static int uk_hwrand_init(struct uk_init_ctx *ictx __unused)
+{
+	return ukarch_random_init();
+}
+
 uk_early_initcall(_uk_swrand_init, 0x0);
+uk_early_initcall(uk_hwrand_init, 0x0);
