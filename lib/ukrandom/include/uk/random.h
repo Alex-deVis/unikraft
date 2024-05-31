@@ -36,6 +36,7 @@
 #include <sys/types.h>
 #include <uk/arch/types.h>
 #include <uk/plat/lcpu.h>
+#include <uk/assert.h>
 #include <uk/config.h>
 #include <uk/plat/time.h>
 
@@ -66,8 +67,8 @@ static inline __u32 uk_swrand_randr(void)
 	return ret;
 }
 
-ssize_t uk_swrand_fill_buffer(void *buf, size_t buflen);
-ssize_t uk_random_fill_buffer(void *buf, __sz buflen);
+__ssz uk_swrand_fill_buffer(void *buf, __sz buflen);
+__ssz uk_random_fill_buffer(void *buf, __sz buflen);
 
 #ifdef __cplusplus
 }

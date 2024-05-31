@@ -44,9 +44,9 @@
  */
 #define CHACHA_SEED_LENGTH 10
 
-ssize_t uk_swrand_fill_buffer(void *buf, size_t buflen)
+__ssz uk_swrand_fill_buffer(void *buf, __sz buflen)
 {
-	size_t step, chunk_size, i;
+	__sz step, chunk_size, i;
 	__u32 rd;
 
 	step = sizeof(__u32);
@@ -61,10 +61,13 @@ ssize_t uk_swrand_fill_buffer(void *buf, size_t buflen)
 		memcpy(buf + i, &rd, chunk_size);
 	}
 
+	/* buflen remains unchanged because the software RNG always succeeds.
+	 * It is returned for consistency with the hardware RNG.
+	 */
 	return buflen;
 }
 
-ssize_t uk_random_fill_buffer(void *buf, __sz buflen) {
+__ssz uk_random_fill_buffer(void *buf, __sz buflen) {
 	__sz step, chunk_size, i;
 	__u64 rd;
 	int ret;
@@ -89,7 +92,7 @@ ssize_t uk_random_fill_buffer(void *buf, __sz buflen) {
 	return buflen;
 }
 
-static int _uk_swrand_init(struct uk_init_ctx *ictx __unused)
+static int uk_swrand_init(struct uk_init_ctx *ictx __unused)
 {
 	unsigned int seedc = CHACHA_SEED_LENGTH;
 	__u32 seedv[CHACHA_SEED_LENGTH];
@@ -116,5 +119,5 @@ static int uk_hwrand_init(struct uk_init_ctx *ictx __unused)
 	return ukarch_random_init();
 }
 
-uk_early_initcall(_uk_swrand_init, 0x0);
+uk_early_initcall(uk_swrand_init, 0x0);
 uk_early_initcall(uk_hwrand_init, 0x0);
